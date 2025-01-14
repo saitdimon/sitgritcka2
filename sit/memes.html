@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка мемов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        input {
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .meme {
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex-direction: column;
+            text-align: center;
+        }
+        .meme img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .likes {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .likes span {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .like-button, .delete-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            margin: 0 5px;
+        }
+        .like-button {
+            background-color: #007bff;
+            color: white;
+        }
+        .like-button:hover {
+            background-color: #0056b3;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .meme-caption {
+            margin-top: 5px;
+            font-style: italic;
+            color: #555;
+        }
+
+        /* Мобильные стили */
+        @media (max-width: 600px) {
+            input {
+                width: calc(100% - 20px);
+                margin: 5px 0;
+            }
+            button {
+                width: 100%;
+            }
+            .meme {
+                padding: 15px;
+            }
+            .likes {
+                flex-direction: column;
+                align-items: center;
+            }
+            .likes span {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Загрузите свой мем!</h1>
+<div>
+    <input type="text" id="memeUrl" placeholder="URL изображения" />
+    <input type="text" id="memeCaption" placeholder="Подпись к мем" />
+    <button id="addMeme">Добавить мем</button>
+</div>
+
+<h2>Список мемов</h2>
+<div id="memeList"></div>
+
+<script>
+    const memeListDiv = document.getElementById('memeList');
+    const memeUrlInput = document.getElementById('memeUrl');
+    const memeCaptionInput = document.getElementById('memeCaption');
+    const addMemeButton = document.getElementById('addMeme');
+
+    // Проверка на регистрацию
+    if (!localStorage.length) {
+        alert('Пожалуйста, сначала зарегистрируйтесь.');
+        window.location.href = 'register.html';
+    }
+
+    // Загрузка мемов из localStorage
+    const loadMemes = () => {
+        const memes = JSON.parse(localStorage.getItem('memes')) || [];
+        return memes;
+    };
+
+    // Сохранение мемов в localStorage
+    const saveMemes = (memes) => {
+        localStorage.setItem('memes', JSON.stringify(memes));
+    };
+
+    let memeList = loadMemes();
+
+    // Отображение мемов
+    const renderMemes = () => {
+        memeListDiv.innerHTML = '';
+        memeList.forEach((meme, index) => {
+            const memeDiv = document.createElement('div');
+            memeDiv.classList.add('meme');
+            memeDiv.innerHTML = `
+                <img src="${meme.url}" alt="Meme" />
+                <div class="likes">
+                    <span>${meme.likes} ❤</span>
+                    <button class="like-button" onclick="likeMeme(${index})" ${meme.likedBy.includes(localStorage.key(0)) ? 'disabled' : ''}>Лайк</button>
+                    <button class="delete-button" onclick="deleteMeme(${index})">Удалить</button>
+                </div>
+                <div class="meme-caption">${meme.caption}</div>
+            `;
+            memeListDiv.appendChild(memeDiv);
+        });
+    };
+
+    // Добавление нового мема
+    addMemeButton.addEventListener('click', () => {
+        const url = memeUrlInput.value;
+        const caption = memeCaptionInput.value;
+        if (url) {
+            const newMeme = { url, caption, likes: 0, likedBy: [] };
+            memeList.push(newMeme);
+            memeUrlInput.value = '';
+            memeCaptionInput.value = ''; // Очищаем поле подписи
+            saveMemes(memeList); // Сохраняем мемы в localStorage
+            renderMemes();
+        }
+    });
+
+    // Лайк мема
+    function likeMeme(index) {
+        const username = localStorage.key(0);
+        if (!memeList[index].likedBy.includes(username)) {
+            memeList[index].likes++;
+            memeList[index].likedBy.push(username);
+            saveMemes(memeList); // Сохраняем изменения в localStorage
+            renderMemes();
+        }
+    }
+
+    // Удаление мема
+    function deleteMeme(index) {
+        memeList.splice(index, 1);
+        saveMemes(memeList); // Сохраняем изменения в localStorage
+        renderMemes();
+    }
+
+    // Первоначальный рендеринг мемов
+    renderMemes();
+</script>
+
+</body>
+</html>
